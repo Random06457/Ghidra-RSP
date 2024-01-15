@@ -135,31 +135,6 @@
 # ################################
 #
 #-----
-@ifdef MIPS64
-
-@ifdef MIPS64_32ADDRS   # used for 64-bit mips restricted to 32-bit addresses
-
-@define REGSIZE "8"     # General purpose register size (8 or 4)
-@define FREGSIZE "8"    # Floating point register size (8 or 4)
-@define ADDRSIZE "4"    # Memory address size (8 or 4, virtual and physical)
-@define DREGSIZE "16"     # 2x REGSIZE used for accumulators
-@define SIZETO4  "4"   # In 32-bit mode, no truncation needed
-@define ADDRCAST ":4"   # need to down cast to pointer size
-@define NEEDCAST "1"
-
-@else                # full 64 bit ptrs
-
-@define REGSIZE "8"     # General purpose register size (8 or 4)
-@define FREGSIZE "8"    # Floating point register size (8 or 4)
-@define ADDRSIZE "8"    # Memory address size (8 or 4, virtual and physical)
-@define DREGSIZE "16"     # 2x REGSIZE used for accumulators
-@define SIZETO4 "4"    # In 64-bit mode, use when need to do 32-bit operation
-@define ADDRCAST ""     # no need to down cast to pointer size
-
-@endif #MIPS64_32ADDRS
-
-
-@else # MIPS32
 
 @define REGSIZE "4"     # General purpose register size (8 or 4)
 # FREGSIZE for mips32 is set in slaspec file
@@ -169,7 +144,6 @@
 @define SIZETO4 "4"
 @define ADDRCAST ""     # no need to down cast to pointer size
 
-@endif
 #-----
 
 define endian=$(ENDIAN);
@@ -192,35 +166,6 @@ define register offset=0 size=$(REGSIZE) [
     pc
 ];
 
-@ifdef MIPS64
-# We need the 32-bit pieces of the main registers for the 32-bit instructions
-@if ENDIAN == "big"
-define register offset=0 size=4 [
-    zero_hi zero_lo at_hi at_lo v0_hi v0_lo v1_hi v1_lo
-    a0_hi a0_lo a1_hi a1_lo a2_hi a2_lo a3_hi a3_lo
-    t0_hi t0_lo t1_hi t1_lo t2_hi t2_lo t3_hi t3_lo
-    t4_hi t4_lo t5_hi t5_lo t6_hi t6_lo t7_hi t7_lo
-    s0_hi s0_lo s1_hi s1_lo s2_hi s2_lo s3_hi s3_lo
-    s4_hi s4_lo s5_hi s5_lo s6_hi s6_lo s7_hi s7_lo
-    t8_hi t8_lo t9_hi t9_lo k0_hi k0_lo k1_hi k1_lo
-    gp_hi gp_lo sp_hi sp_lo s8_hi s8_lo ra_hi ra_lo
-    pc_hi pc_lo
-];
-@else
-define register offset=0 size=4 [
-    zero_lo zero_hi at_lo at_hi v0_lo v0_hi v1_lo v1_hi
-    a0_lo a0_hi a1_lo a1_hi a2_lo a2_hi a3_lo a3_hi
-    t0_lo t0_hi t1_lo t1_hi t2_lo t2_hi t3_lo t3_hi
-    t4_lo t4_hi t5_lo t5_hi t6_lo t6_hi t7_lo t7_hi
-    s0_lo s0_hi s1_lo s1_hi s2_lo s2_hi s3_lo s3_hi
-    s4_lo s4_hi s5_lo s5_hi s6_lo s6_hi s7_lo s7_hi
-    t8_lo t8_hi t9_lo t9_hi k0_lo k0_hi k1_lo k1_hi
-    gp_lo gp_hi sp_lo sp_hi s8_lo s8_hi ra_lo ra_hi
-    pc_lo pc_hi
-];
-@endif # ENDIAN
-
-@endif # MIPS64
 
 # Floating point registers
 @if FREGSIZE == "4"
@@ -643,14 +588,6 @@ attach variables [ rd_hw ] [
 	HW_RES28	HW_ULR			HW_RESIM30	HW_RESIM31
 ];
 
-@ifdef MIPS64
-attach variables [ rs32 rt32 rd32 ] [
-    zero_lo  at_lo  v0_lo  v1_lo  a0_lo  a1_lo  a2_lo  a3_lo
-    t0_lo    t1_lo  t2_lo  t3_lo  t4_lo  t5_lo  t6_lo  t7_lo
-    s0_lo    s1_lo  s2_lo  s3_lo  s4_lo  s5_lo  s6_lo  s7_lo
-    t8_lo    t9_lo  k0_lo  k1_lo  gp_lo  sp_lo  s8_lo  ra_lo
-];
-@else
 # For MIPS32 these are the same as rs, rt, and rd
 attach variables [ rs32 rt32 rd32 ] [
     zero  at  v0  v1  a0  a1  a2  a3
@@ -658,7 +595,6 @@ attach variables [ rs32 rt32 rd32 ] [
     s0    s1  s2  s3  s4  s5  s6  s7
     t8    t9  k0  k1  gp  sp  s8  ra
 ];
-@endif
 
 attach variables [ fs ft fd fr ] [
     f0  f1  f2  f3  f4  f5  f6  f7  f8  f9  f10 f11 f12 f13 f14 f15
@@ -884,12 +820,6 @@ Abs26: reloc		is ind26	[ reloc=((inst_start+4) $and 0xfffffffff0000000) | 4*ind2
 
 InsSize: mysize           is msbd & lsb   [ mysize = msbd - lsb + 1; ]      { tmp:1 = mysize; export tmp; }
 ExtSize: mysize           is msbd         [ mysize = msbd + 1; ]            { tmp:1 = mysize; export tmp; }
-
-@ifdef MIPS64
-DextmSize: mysize         is msbd         [ mysize = msbd + 1 + 32; ]       { tmp:1 = mysize; export tmp; }
-DXuPos: pos             is lsb          [ pos = lsb + 32; ]             { tmp:1 = pos; export tmp; }
-DinsXSize: mysize         is msbd & lsb   [ mysize = msbd - lsb + 1 + 32; ] { tmp:1 = mysize; export tmp; }
-@endif
 
 macro JXWritePC(addr) {
 @ifdef ISA_VARIANT
