@@ -26,7 +26,10 @@
   <default_proto>
     <prototype name="__stdcall" extrapop="0" stackshift="0">
       <input>
-        <pentry minsize="1" maxsize="8" metatype="float">
+        <pentry minsize="1" maxsize="4">
+          <register name="r4"/>
+        </pentry>
+        <!-- <pentry minsize="1" maxsize="8" metatype="float">
           <register name="f12_13"/>
         </pentry>
         <pentry minsize="1" maxsize="8" metatype="float">
@@ -46,21 +49,24 @@
         </pentry>
         <pentry minsize="1" maxsize="500" align="4">
           <addr offset="16" space="stack"/>
-        </pentry>
+        </pentry> -->
       </input>
       <output>
-        <pentry minsize="1" maxsize="8" metatype="float">
+        <!-- <pentry minsize="1" maxsize="8" metatype="float">
           <register name="f0_1"/>
-        </pentry>
+        </pentry> -->
         <pentry minsize="1" maxsize="4">
+          <register name="r1"/>
+        </pentry>
+        <!-- <pentry minsize="1" maxsize="4">
           <register name="v0"/>
-        </pentry>
-		<pentry minsize="5" maxsize="8">
+        </pentry> -->
+        <!-- <pentry minsize="5" maxsize="8">
           <addr space="join" piece1="v0" piece2="v1"/>
-        </pentry>
+        </pentry> -->
       </output>
       <unaffected>
-        <register name="s0"/>
+        <!-- <register name="s0"/>
         <register name="s1"/>
         <register name="s2"/>
         <register name="s3"/>
@@ -68,15 +74,15 @@
         <register name="s5"/>
         <register name="s6"/>
         <register name="s7"/>
-        <register name="s8"/>
+        <register name="s8"/> -->
         <register name="sp"/>
-        <register name="gp"/>
+        <!-- <register name="gp"/>
         <register name="f20"/>
         <register name="f22"/>
         <register name="f24"/>
         <register name="f26"/>
         <register name="f28"/>
-        <register name="f30"/>
+        <register name="f30"/> -->
       </unaffected>
       <localrange>
         <range space="stack" first="0xfff0bdc0" last="0xffffffff"/>
@@ -84,7 +90,7 @@
       </localrange>
     </prototype>
   </default_proto>
-  <prototype name="processEntry" extrapop="0" stackshift="0">
+  <!-- <prototype name="processEntry" extrapop="0" stackshift="0">
       <input pointermax="4">
         <pentry minsize="1" maxsize="4">
           <register name="v0"/>
@@ -101,7 +107,7 @@
       <unaffected>
         <register name="sp"/>
       </unaffected>
-  </prototype>
+  </prototype> -->
 
 
 </compiler_spec>
