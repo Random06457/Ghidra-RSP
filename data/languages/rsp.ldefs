@@ -5,16 +5,16 @@
 <language_definitions>
 <!-- Uncomment the following to make the language available in Ghidra -->
 
-  <language processor="RSP"
+  <language processor="NintendoRSP"
           endian="big"
           size="32"
           variant="default"
           version="1.0"
-          slafile="skel.sla"
-          processorspec="skel.pspec"
+          slafile="rsp.sla"
+          processorspec="rsp.pspec"
           id="RSP:BE:32:default">
-  <description>Nintendo RSP</description>
-  <compiler name="default" spec="skel.cspec" id="default"/>
+  <description>Nintendo 64 RSP</description>
+  <compiler name="default" spec="rsp.cspec" id="default"/>
 </language>
 
 </language_definitions>
