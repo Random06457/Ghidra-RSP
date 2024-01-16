@@ -1,0 +1,63 @@
+
+# 0100 101c cccc cccc cccc cccc cccc cccc
+#:cop2 cofun                     is $(AMODE) & prime=0x12 & bit25=1 & cofun {
+#    arg:4 = cofun;
+#    copFunction(2:1, arg);
+#}
+
+@ifndef COPR_C
+# 1110 10bb bbbt tttt iiii iiii iiii iiii
+#:swc2 hint, OFF_BASE              is $(AMODE) & prime=0x3A & OFF_BASE & hint {
+#	tmp:4 = getCopReg(2:1, hint:4);
+#    *[ram]:4 OFF_BASE = tmp;
+#}
+@endif
+
+@ifndef COPR_C
+# 1100 10bb bbbt tttt iiii iiii iiii iiii
+#:lwc2 rt, OFF_BASE              is $(AMODE) & REL6=0 & prime=0x32 & OFF_BASE & rt {
+#    setCopReg( 2:1, rt, *[ram]:4 OFF_BASE );
+#}
+@endif
+
+macro clamp_signed(dst, src) {
+    local tmp:2 = src;
+    if (tmp s>= -32768) goto <L1>;
+        tmp = -32768;
+    <L1>
+    if (tmp s<= 32767) goto <L2>;
+        tmp = 32767;
+    <L2>
+    dst = tmp;
+}
+
+# Coprocessor Computational insturction
+
+macro vmuldh_i(acc, d, s, t) {
+    acc = (sext(s) * sext(t)) << 16;
+    clamp_signed(d, acc[16,16]);
+}
+
+:vmudh vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=7 & vd & vs & vt & e {
+    vmuldh_i(acc0, vd[0,16], vs[0,16], vt[0,16]);
+    vmuldh_i(acc1, vd[16,16], vs[16,16], vt[16,16]);
+    vmuldh_i(acc2, vd[32,16], vs[32,16], vt[32,16]);
+    vmuldh_i(acc3, vd[48,16], vs[48,16], vt[48,16]);
+    vmuldh_i(acc4, vd[64,16], vs[64,16], vt[64,16]);
+    vmuldh_i(acc5, vd[80,16], vs[80,16], vt[80,16]);
+    vmuldh_i(acc6, vd[96,16], vs[96,16], vt[96,16]);
+    vmuldh_i(acc7, vd[112,16], vs[112,16], vt[112,16]);
+}
+
+
+
+# LWC2 / SWC2
+
+:sqv vt[0], OFF06L4_BASE is prime=0x3A & cop2lsop=4 & OFF06L4_BASE & vt & element=0 {
+    *[ram]:16 OFF06L4_BASE = vt;
+}
+
+:lqv vt[0], OFF06L4_BASE is prime=0x32 & cop2lsop=4 & OFF06L4_BASE & vt & element=0 {
+    #vt = *(OFF06L4_BASE);
+    vt = *[ram]:16 OFF06L4_BASE;
+}

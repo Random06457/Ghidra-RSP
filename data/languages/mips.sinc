@@ -153,6 +153,18 @@ define alignment=2;
 define space ram type=ram_space size=$(ADDRSIZE) default;
 define space register type=register_space size=4;
 
+# VU Register
+define register offset=0x5000 size=16 [
+    v0  v1  v2  v3  v4  v5  v6  v7  v8  v9
+    v10 v11 v12 v13 v14 v15 v16 v17 v18 v19
+    v20 v21 v22 v23 v24 v25 v26 v27 v28 v29
+    v30 v31
+];
+# Accumulator
+define register offset=0x5200 size=48 [
+    acc0 acc1 acc2 acc3 acc4 acc5 acc6 acc7
+];
+
 # General purpose registers
 define register offset=0 size=$(REGSIZE) [
         zero  r1  r2  r3  r4  r5  r6  r7
@@ -564,7 +576,23 @@ define token instr(32)
     simmed      = (0,15) signed
     simmseq     = (6,15) signed
     simmed11    = (0,10)
+
+    e           = (21,24)
+    vs          = (11,15)
+    vd          = (6,10)
+    vt          = (16,20)
+    cop2lsop    = (11,15)
+    cop2mvop    = (21,31)
+    element     = (7,10)
+    simmed06    = (0,6) signed
 ;
+
+attach variables [ vt vd vs ] [
+    v0  v1  v2  v3  v4  v5  v6  v7  v8  v9
+    v10 v11 v12 v13 v14 v15 v16 v17 v18 v19
+    v20 v21 v22 v23 v24 v25 v26 v27 v28 v29
+    v30 v31
+];
 
 attach variables [ rs rt rd base index baser6 ] [
     zero  r1  r2  r3  r4  r5  r6  r7
@@ -795,6 +823,16 @@ macro ValCast(dest,src) {
 	dest = src;
 }
 @endif
+
+S06L1: val is simmed06 [ val = simmed06 << 1; ] { export *[const]:4 val; }
+S06L2: val is simmed06 [ val = simmed06 << 2; ] { export *[const]:4 val; }
+S06L3: val is simmed06 [ val = simmed06 << 3; ] { export *[const]:4 val; }
+S06L4: val is simmed06 [ val = simmed06 << 4; ] { export *[const]:4 val; }
+OFF06L1_BASE: S06L1(base) is S06L1 & base { tmp:4 = base + S06L1; export tmp; }
+OFF06L2_BASE: S06L2(base) is S06L2 & base { tmp:4 = base + S06L2; export tmp; }
+OFF06L3_BASE: S06L3(base) is S06L3 & base { tmp:4 = base + S06L3; export tmp; }
+OFF06L4_BASE: S06L4(base) is S06L4 & base { tmp:4 = base + S06L4; export tmp; }
+OFF06_BASE: simmed06(base) is simmed06 & base { tmp:4 = base + simmed06; export tmp; }
 
 OFF_BASE: simmed(base)  is simmed & base    { tmp:$(REGSIZE) = base + simmed; tmpscaled:$(ADDRSIZE) = 0; ValCast(tmpscaled,tmp); export tmpscaled; }
 INDEX_BASE: index(base) is index & base     { tmp:$(REGSIZE) = base + index; tmpscaled:$(ADDRSIZE) = 0; ValCast(tmpscaled,tmp); export tmpscaled; }
