@@ -286,3 +286,7 @@ macro vxor_i(i, vd, vs, vt, e) {
 :ltv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
 :stv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
 
+:mtc2 rt, vs[element] is prime=0x12 & copop=4 & rt & vs & element {
+    local addr:4 = &vs + element;
+    *[register]:2 addr = rt;
+}

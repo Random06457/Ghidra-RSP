@@ -447,10 +447,6 @@ define pcodeop special2;
 :mtc0 RTsrc, RD0, sel               is $(AMODE) & prime=0x10 & copop=4 & RTsrc & RD0 & zero6=0 & sel {
 	setCopReg(0:1, RD0, RTsrc, sel:1);
 }
-# 0100 1000 100t tttt iiii iiii iiii iiii
-:mtc2 RTsrc, immed              is $(AMODE) & prime=0x12 & copop=4 & RTsrc & immed {
-    setCopReg(2:1, immed:4, RTsrc);
-}
 
 :mthc0 RTsrc, RD0, sel          is $(AMODE) & prime=0x10 & copop=6 & RTsrc & RD0 & zero6=0 & sel {
 	setCopReg(0:1, RD0, RTsrc, sel:1);
