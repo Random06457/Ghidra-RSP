@@ -9,6 +9,42 @@ macro clamp_signed(dst, src) {
     dst = tmp;
 }
 
+macro get_j_from_i(j, i, e)
+{
+    # todo: what happens if it's 1?
+    if (e != 0 && e != 1) goto <L1>;
+        j = i;
+        goto <END>;
+    <L1>
+    if ((e & 0b1110) != 0b0010) goto <L2>;
+        j = (e & 0b0001) + (i & 0b1110);
+        goto <END>;
+    <L2>
+    if ((e & 0b1100) != 0b0100) goto <L3>;
+        j = (e & 0b0011) + (i & 0b1100);
+        goto <END>;
+    <L3>
+    if ((e & 0b1000) != 0b1000) goto <END>;
+        j = (e & 0b0111);
+
+    <END>
+}
+
+macro vco_set_notequ(i, x) {
+    local x2:2 = x:2;
+    local vco_mask:2 = 1 << (i + 8);
+    local to_or:2 = x2 << (i + 8);
+    VCO = (VCO & ~vco_mask) | to_or;
+}
+
+macro vco_set_carry(i, x) {
+    local x2:2 = trunc(x);
+    local vco_mask:2 = 1 << i;
+    local to_or:2 = x2 << i;
+    VCO = (VCO & ~vco_mask) | to_or;
+}
+
+
 # Coprocessor Computational insturction
 
 # Multiply
@@ -60,10 +96,67 @@ macro vmuldh_i(acc, d, s, t) {
 :vmadh is prime=0x12 & fct=0b001111 unimpl
 
 # Add
-:vadd is prime=0x12 & fct=0b010000 unimpl
+
+macro vadd_i(i, vd, vs, vt, e) {
+    local j:1;
+    get_j_from_i(j, i, e);
+
+    local d_addr:4 = &vd + zext(i) * 2;
+    local s_addr:4 = &vs + zext(i) * 2;
+    local t_addr:4 = &vt + zext(j) * 2;
+    local a_addr:4 = &acc0 + zext(i) * 6;
+
+    # todo: + VC0
+    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr) + zext((VCO >> i) & 1);
+    *[register]:2 a_addr = res[0,16];
+    clamp_signed(*[register]:2 d_addr, res[0,16]);
+
+    i = i + 1;
+}
+:vadd vd, vs, vt[e] is prime=0x12 & fct=0b010000 & vd & vs & vt & e {
+    local i:1 = 0;
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    vadd_i(i, vd, vs, vt, e:1);
+    VCO = 0;
+}
 :vsub is prime=0x12 & fct=0b010001 unimpl
 :vabs is prime=0x12 & fct=0b010011 unimpl
-:vaddc is prime=0x12 & fct=0b010100 unimpl
+
+macro vaddc_i(i, vd, vs, vt, e) {
+    local j:1;
+    get_j_from_i(j, i, e);
+
+    local d_addr:4 = &vd + zext(i) * 2;
+    local s_addr:4 = &vs + zext(i) * 2;
+    local t_addr:4 = &vt + zext(j) * 2;
+    local a_addr:4 = &acc0 + zext(i) * 6;
+
+    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr);
+    *[register]:2 a_addr = res[0,16];
+    *[register]:2 d_addr = res[0,16];
+    vco_set_carry(i, res[16,1]);
+    vco_set_notequ(i, 0:1);
+
+    i = i + 1;
+}
+
+:vaddc vd, vs, vt[e] is prime=0x12 & fct=0b010100 & vd & vs & vt & e {
+    local i:1 = 0;
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+    vaddc_i(i, vd, vs, vt, e:1);
+}
 :vsubc is prime=0x12 & fct=0b010101 unimpl
 :vsar is prime=0x12 & fct=0b011101 unimpl
 
