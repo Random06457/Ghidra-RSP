@@ -160,10 +160,18 @@ define register offset=0x5000 size=16 [
     v20 v21 v22 v23 v24 v25 v26 v27 v28 v29
     v30 v31
 ];
-# Accumulator
+# VU Accumulator
 define register offset=0x5200 size=48 [
     acc0 acc1 acc2 acc3 acc4 acc5 acc6 acc7
 ];
+# VU Control Registers
+define register offset=0x5380 size=2 [
+    VCC VCO
+];
+define register offset=0x5384 size=1 [
+    VCE
+];
+
 
 # General purpose registers
 define register offset=0 size=$(REGSIZE) [
