@@ -1,25 +1,3 @@
-
-# 0100 101c cccc cccc cccc cccc cccc cccc
-#:cop2 cofun                     is $(AMODE) & prime=0x12 & bit25=1 & cofun {
-#    arg:4 = cofun;
-#    copFunction(2:1, arg);
-#}
-
-@ifndef COPR_C
-# 1110 10bb bbbt tttt iiii iiii iiii iiii
-#:swc2 hint, OFF_BASE              is $(AMODE) & prime=0x3A & OFF_BASE & hint {
-#	tmp:4 = getCopReg(2:1, hint:4);
-#    *[ram]:4 OFF_BASE = tmp;
-#}
-@endif
-
-@ifndef COPR_C
-# 1100 10bb bbbt tttt iiii iiii iiii iiii
-#:lwc2 rt, OFF_BASE              is $(AMODE) & REL6=0 & prime=0x32 & OFF_BASE & rt {
-#    setCopReg( 2:1, rt, *[ram]:4 OFF_BASE );
-#}
-@endif
-
 macro clamp_signed(dst, src) {
     local tmp:2 = src;
     if (tmp s>= -32768) goto <L1>;
@@ -33,12 +11,43 @@ macro clamp_signed(dst, src) {
 
 # Coprocessor Computational insturction
 
-macro vmuldh_i(acc, d, s, t) {
-    acc = (sext(s) * sext(t)) << 16;
-    clamp_signed(d, acc[16,16]);
+# Multiply
+
+:vmulf is prime=0x12 & fct=0b000000 unimpl
+:vmacf is prime=0x12 & fct=0b001000 unimpl
+:vmulu is prime=0x12 & fct=0b000001 unimpl
+:vmacu is prime=0x12 & fct=0b001001 unimpl
+:vrndp is prime=0x12 & fct=0b000010 unimpl
+:vrndn is prime=0x12 & fct=0b001010 unimpl
+:vmulq is prime=0x12 & fct=0b000011 unimpl
+:vmacq is prime=0x12 & fct=0b001011 unimpl
+:vmudl is prime=0x12 & fct=0b000100 unimpl
+:vmadl is prime=0x12 & fct=0b001100 unimpl
+:vmudm is prime=0x12 & fct=0b000101 unimpl
+:vmadm is prime=0x12 & fct=0b001101 unimpl
+macro vmudn_i(acc, d, s, t) {
+    local tmp:4 = (sext(s) * sext(t));
+    acc[0,32] = tmp;
+    clamp_signed(d, acc[0,16]);
+}
+:vmudn vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000110 & vd & vs & vt & e {
+    vmudn_i(acc0, vd[0,16], vs[0,16], vt[0,16]);
+    vmudn_i(acc1, vd[16,16], vs[16,16], vt[16,16]);
+    vmudn_i(acc2, vd[32,16], vs[32,16], vt[32,16]);
+    vmudn_i(acc3, vd[48,16], vs[48,16], vt[48,16]);
+    vmudn_i(acc4, vd[64,16], vs[64,16], vt[64,16]);
+    vmudn_i(acc5, vd[80,16], vs[80,16], vt[80,16]);
+    vmudn_i(acc6, vd[96,16], vs[96,16], vt[96,16]);
+    vmudn_i(acc7, vd[112,16], vs[112,16], vt[112,16]);
 }
 
-:vmudh vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=7 & vd & vs & vt & e {
+:vmadn is prime=0x12 & fct=0b001110 unimpl
+macro vmuldh_i(acc, d, s, t) {
+    local tmp:4 = (sext(s) * sext(t));
+    acc[0,32] = tmp << 16;
+    clamp_signed(d, acc[16,16]);
+}
+:vmudh vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000111 & vd & vs & vt & e {
     vmuldh_i(acc0, vd[0,16], vs[0,16], vt[0,16]);
     vmuldh_i(acc1, vd[16,16], vs[16,16], vt[16,16]);
     vmuldh_i(acc2, vd[32,16], vs[32,16], vt[32,16]);
@@ -48,16 +57,80 @@ macro vmuldh_i(acc, d, s, t) {
     vmuldh_i(acc6, vd[96,16], vs[96,16], vt[96,16]);
     vmuldh_i(acc7, vd[112,16], vs[112,16], vt[112,16]);
 }
+:vmadh is prime=0x12 & fct=0b001111 unimpl
 
+# Add
+:vadd is prime=0x12 & fct=0b010000 unimpl
+:vsub is prime=0x12 & fct=0b010001 unimpl
+:vabs is prime=0x12 & fct=0b010011 unimpl
+:vaddc is prime=0x12 & fct=0b010100 unimpl
+:vsubc is prime=0x12 & fct=0b010101 unimpl
+:vsar is prime=0x12 & fct=0b011101 unimpl
+
+
+# Select
+:vlt is prime=0x12 & fct=0b100000 unimpl
+:veq is prime=0x12 & fct=0b100001 unimpl
+:vne is prime=0x12 & fct=0b100010 unimpl
+:vge is prime=0x12 & fct=0b100011 unimpl
+:vcl is prime=0x12 & fct=0b100100 unimpl
+:vch is prime=0x12 & fct=0b100101 unimpl
+:vcr is prime=0x12 & fct=0b100110 unimpl
+:vmrg is prime=0x12 & fct=0b100111 unimpl
+
+
+# Logical
+:vand is prime=0x12 & fct=0b101000 unimpl
+:vnand is prime=0x12 & fct=0b101001 unimpl
+:vor is prime=0x12 & fct=0b101010 unimpl
+:vnor is prime=0x12 & fct=0b101011 unimpl
+:vxor is prime=0x12 & fct=0b101100 unimpl
+:vvxor is prime=0x12 & fct=0b101101 unimpl
+
+
+# Divide
+:vrcp is prime=0x12 & fct=0b110000 unimpl
+:vrcpl is prime=0x12 & fct=0b110001 unimpl
+:vrcph is prime=0x12 & fct=0b110010 unimpl
+:vmov is prime=0x12 & fct=0b110011 unimpl
+:vrsq is prime=0x12 & fct=0b110100 unimpl
+:vrsql is prime=0x12 & fct=0b110101 unimpl
+:vrsqh is prime=0x12 & fct=0b110110 unimpl
+:vnop is prime=0x12 & fct=0b110111 unimpl
 
 
 # LWC2 / SWC2
 
-:sqv vt[0], OFF06L4_BASE is prime=0x3A & cop2lsop=4 & OFF06L4_BASE & vt & element=0 {
-    *[ram]:16 OFF06L4_BASE = vt;
+:lbv is prime=0b110010 & cop2lsop=0b00000 unimpl
+:sbv is prime=0b111010 & cop2lsop=0b00000 unimpl
+:ldv is prime=0b110010 & cop2lsop=0b00011 unimpl
+:sdv is prime=0b111010 & cop2lsop=0b00011 unimpl
+:lfv is prime=0b110010 & cop2lsop=0b01001 unimpl
+:sfv is prime=0b111010 & cop2lsop=0b01001 unimpl
+:lhv is prime=0b110010 & cop2lsop=0b01000 unimpl
+:shv is prime=0b111010 & cop2lsop=0b01000 unimpl
+:llv vt[element], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00010 & OFF06L1_BASE & vt & element {
+    addr:4 = &vt + element;
+    *[register] addr = *[ram]:2 OFF06L1_BASE;
 }
-
-:lqv vt[0], OFF06L4_BASE is prime=0x32 & cop2lsop=4 & OFF06L4_BASE & vt & element=0 {
+:slv is prime=0b111010 & cop2lsop=0b00010 unimpl
+:lpv is prime=0b110010 & cop2lsop=0b00110 unimpl
+:spv is prime=0b111010 & cop2lsop=0b00110 unimpl
+:lqv vt[0], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00100 & OFF06L4_BASE & vt & element=0 {
     #vt = *(OFF06L4_BASE);
     vt = *[ram]:16 OFF06L4_BASE;
 }
+:sqv vt[0], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00100 & OFF06L4_BASE & vt & element=0 {
+    *[ram]:16 OFF06L4_BASE = vt;
+}
+:lrv is prime=0b110010 & cop2lsop=0b00101 unimpl
+:srv is prime=0b111010 & cop2lsop=0b00101 unimpl
+:lsv is prime=0b110010 & cop2lsop=0b00001 unimpl
+:ssv vt[element], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & OFF06L1_BASE & vt & element {
+    addr:4 = &vt + element;
+    *[ram]:2 OFF06L1_BASE = *[register] addr;
+}
+:ltv is prime=0b110010 & cop2lsop=0b01011 unimpl
+:stv is prime=0b111010 & cop2lsop=0b01011 unimpl
+:luv is prime=0b110010 & cop2lsop=0b00111 unimpl
+:suv is prime=0b111010 & cop2lsop=0b00111 unimpl
