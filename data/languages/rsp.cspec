@@ -90,6 +90,34 @@
       </localrange>
     </prototype>
   </default_proto>
+
+  <prototype name="entrypoint" extrapop="0" stackshift="0">
+    <input>
+      <pentry minsize="1" maxsize="4">
+          <register name="r1"/>
+        </pentry>
+    </input>
+    <output>
+    </output>
+  </prototype>
+  <prototype name="dma_func" extrapop="0" stackshift="0">
+    <input>
+      <pentry minsize="1" maxsize="4">
+          <register name="r27"/>
+      </pentry>
+      <pentry minsize="1" maxsize="4">
+          <register name="r28"/>
+      </pentry>
+      <pentry minsize="1" maxsize="4">
+          <register name="r29"/>
+      </pentry>
+    </input>
+    <output>
+      <pentry minsize="1" maxsize="4">
+          <register name="r27"/>
+      </pentry>
+    </output>
+  </prototype>
   <!-- <prototype name="processEntry" extrapop="0" stackshift="0">
       <input pointermax="4">
         <pentry minsize="1" maxsize="4">
