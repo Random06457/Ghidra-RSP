@@ -173,12 +173,40 @@ macro vaddc_i(i, vd, vs, vt, e) {
 
 
 # Logical
-:vand is prime=0x12 & fct=0b101000 unimpl
-:vnand is prime=0x12 & fct=0b101001 unimpl
-:vor is prime=0x12 & fct=0b101010 unimpl
-:vnor is prime=0x12 & fct=0b101011 unimpl
-:vxor is prime=0x12 & fct=0b101100 unimpl
-:vvxor is prime=0x12 & fct=0b101101 unimpl
+:vand vd, vs, vt[e] is prime=0x12 & fct=0b101000 & vd & vs & vt & e unimpl
+:vnand vd, vs, vt[e] is prime=0x12 & fct=0b101001 & vd & vs & vt & e unimpl
+:vor vd, vs, vt[e] is prime=0x12 & fct=0b101010 & vd & vs & vt & e unimpl
+:vnor vd, vs, vt[e] is prime=0x12 & fct=0b101011 & vd & vs & vt & e unimpl
+
+macro vxor_i(i, vd, vs, vt, e) {
+    local j:1;
+    get_j_from_i(j, i, e);
+
+    local d_addr:4 = &vd + zext(i) * 2;
+    local s_addr:4 = &vs + zext(i) * 2;
+    local t_addr:4 = &vt + zext(j) * 2;
+    local a_addr:4 = &acc0 + zext(i) * 6;
+
+    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr);
+    *[register]:2 a_addr = res[0,16];
+    *[register]:2 d_addr = res[0,16];
+    vco_set_carry(i, res[16,1]);
+    vco_set_notequ(i, 0:1);
+
+    i = i + 1;
+}
+:vxor vd, vs, vt[e] is prime=0x12 & fct=0b101100 & vd & vs & vt & e {
+    local i:1 = 0;
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+    vxor_i(i, vd, vs, vt, e:1);
+}
+:vvxor vd, vs, vt[e] is prime=0x12 & fct=0b101101 & vd & vs & vt & e unimpl
 
 
 # Divide
