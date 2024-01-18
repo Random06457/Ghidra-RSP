@@ -21,6 +21,7 @@ import java.io.FileInputStream;
 import java.io.File;
 
 import docking.widgets.OptionDialog;
+import docking.widgets.filechooser.GhidraFileChooser;
 import ghidra.app.util.Option;
 import ghidra.app.util.OptionUtils;
 import ghidra.app.util.bin.ByteProvider;
@@ -29,10 +30,11 @@ import ghidra.app.util.opinion.AbstractProgramWrapperLoader;
 import ghidra.app.util.opinion.LoadSpec;
 import ghidra.framework.model.DomainObject;
 import ghidra.program.flatapi.FlatProgramAPI;
-import ghidra.program.model.address.Address;
 import ghidra.program.model.lang.LanguageCompilerSpecPair;
 import ghidra.program.model.listing.Program;
+import ghidra.program.model.util.CodeUnitInsertionException;
 import ghidra.util.exception.CancelledException;
+import ghidra.util.exception.DuplicateNameException;
 import ghidra.util.task.TaskMonitor;
 import ghidra.app.util.opinion.Loader;
 
@@ -63,23 +65,29 @@ public class GhidraRSPLoader extends AbstractProgramWrapperLoader {
     throws CancelledException, IOException {
 
         FlatProgramAPI api = new FlatProgramAPI(program);
+
         int dmemEnd = 0;
         while (true)
         {
-            String rodataPath = OptionDialog.showInputSingleLineDialog(null, ".rodata File", "Specify the file that contains the ucode rodata (DMEM)", "");
-            if (rodataPath.isEmpty())
-            break;
-            File f = new File(rodataPath);
+            GhidraFileChooser chooser = new GhidraFileChooser(null);
+            chooser.setTitle("Choose a ucode rodata file (the content of DMEM)");
+            File f = chooser.getSelectedFile();
+            if (f == null)
+                break;
+
             if (!f.exists() || f.isDirectory())
-            continue;
+                continue;
+
             byte[] bytes = new byte[(int)f.length()];
             dmemEnd = bytes.length;
-            var fileReader = new FileInputStream(rodataPath);
+            var fileReader = new FileInputStream(f.getPath());
             fileReader.read(bytes);
+            fileReader.close();
             try {
-                api.createMemoryBlock("dmem", api.toAddr(0), bytes,false).setPermissions(true, true, false);;
+                api.createMemoryBlock("dmem", api.toAddr(0), bytes,false).setPermissions(true, true, false);
             } catch (Exception e) {
                 e.printStackTrace();
+                throw new CancelledException();
             }
             break;
         }
@@ -92,6 +100,14 @@ public class GhidraRSPLoader extends AbstractProgramWrapperLoader {
             program.getMemory().createUninitializedBlock("dmem.uninit", api.toAddr(dmemEnd), 0x1000 - dmemEnd, false).setPermissions(true, true, false);
         } catch (Exception e) {
             e.printStackTrace();
+            throw new CancelledException();
+        }
+
+        try {
+            api.createData(api.toAddr(0xFC0), new OSTask().toDataType());
+        } catch (CodeUnitInsertionException | DuplicateNameException | IOException e) {
+            e.printStackTrace();
+            throw new CancelledException();
         }
 
     }

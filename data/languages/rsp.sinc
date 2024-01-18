@@ -1,270 +1,391 @@
-macro clamp_signed(dst, src) {
-    local tmp:2 = src;
-    if (tmp s>= -32768) goto <L1>;
-        tmp = -32768;
-    <L1>
-    if (tmp s<= 32767) goto <L2>;
-        tmp = 32767;
-    <L2>
-    dst = tmp;
-}
-
-macro get_j_from_i(j, i, e)
-{
-    # todo: what happens if it's 1?
-    if (e != 0 && e != 1) goto <L1>;
-        j = i;
-        goto <END>;
-    <L1>
-    if ((e & 0b1110) != 0b0010) goto <L2>;
-        j = (e & 0b0001) + (i & 0b1110);
-        goto <END>;
-    <L2>
-    if ((e & 0b1100) != 0b0100) goto <L3>;
-        j = (e & 0b0011) + (i & 0b1100);
-        goto <END>;
-    <L3>
-    if ((e & 0b1000) != 0b1000) goto <END>;
-        j = (e & 0b0111);
-
-    <END>
-}
-
-macro vco_set_notequ(i, x) {
-    local x2:2 = x:2;
-    local vco_mask:2 = 1 << (i + 8);
-    local to_or:2 = x2 << (i + 8);
-    VCO = (VCO & ~vco_mask) | to_or;
-}
-
-macro vco_set_carry(i, x) {
-    local x2:2 = trunc(x);
-    local vco_mask:2 = 1 << i;
-    local to_or:2 = x2 << i;
-    VCO = (VCO & ~vco_mask) | to_or;
-}
-
-
 # Coprocessor Computational insturction
 
 # Multiply
 
-:vmulf is prime=0x12 & fct=0b000000 unimpl
-:vmacf is prime=0x12 & fct=0b001000 unimpl
-:vmulu is prime=0x12 & fct=0b000001 unimpl
-:vmacu is prime=0x12 & fct=0b001001 unimpl
-:vrndp is prime=0x12 & fct=0b000010 unimpl
-:vrndn is prime=0x12 & fct=0b001010 unimpl
-:vmulq is prime=0x12 & fct=0b000011 unimpl
-:vmacq is prime=0x12 & fct=0b001011 unimpl
-:vmudl is prime=0x12 & fct=0b000100 unimpl
-:vmadl is prime=0x12 & fct=0b001100 unimpl
-:vmudm is prime=0x12 & fct=0b000101 unimpl
-:vmadm is prime=0x12 & fct=0b001101 unimpl
-macro vmudn_i(acc, d, s, t) {
-    local tmp:4 = (sext(s) * sext(t));
-    acc[0,32] = tmp;
-    clamp_signed(d, acc[0,16]);
+define pcodeop vmulf;
+:vmulf vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000000 & vd & vs & vt & e {
+    vd = vmulf(vs, vt, e:4);
 }
+define pcodeop vmacf;
+:vmacf vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001000 & vd & vs & vt & e {
+    vd = vmacf(vs, vt, e:4);
+}
+define pcodeop vmulu;
+:vmulu vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000001 & vd & vs & vt & e {
+    vd = vmulu(vs, vt, e:4);
+}
+define pcodeop vmacu;
+:vmacu vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001001 & vd & vs & vt & e {
+    vd = vmacu(vs, vt, e:4);
+}
+define pcodeop vrndp;
+:vrndp vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000010 & vd & vs & vt & e {
+    vd = vrndp(vs, vt, e:4);
+}
+define pcodeop vrndn;
+:vrndn vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001010 & vd & vs & vt & e {
+    vd = vrndn(vs, vt, e:4);
+}
+define pcodeop vmulq;
+:vmulq vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000011 & vd & vs & vt & e {
+    vd = vmulq(vs, vt, e:4);
+}
+define pcodeop vmacq;
+:vmacq vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001011 & vd & vs & vt & e {
+    vd = vmacq(vs, vt, e:4);
+}
+define pcodeop vmudl;
+:vmudl vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000100 & vd & vs & vt & e {
+    vd = vmudl(vs, vt, e:4);
+}
+define pcodeop vmadl;
+:vmadl vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001100 & vd & vs & vt & e {
+    vd = vmadl(vs, vt, e:4);
+}
+define pcodeop vmudm;
+:vmudm vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000101 & vd & vs & vt & e {
+    vd = vmudm(vs, vt, e:4);
+}
+define pcodeop vmadm;
+:vmadm vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b001101 & vd & vs & vt & e {
+    vd = vmadm(vs, vt, e:4);
+}
+define pcodeop vmudn;
 :vmudn vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000110 & vd & vs & vt & e {
-    vmudn_i(acc0, vd[0,16], vs[0,16], vt[0,16]);
-    vmudn_i(acc1, vd[16,16], vs[16,16], vt[16,16]);
-    vmudn_i(acc2, vd[32,16], vs[32,16], vt[32,16]);
-    vmudn_i(acc3, vd[48,16], vs[48,16], vt[48,16]);
-    vmudn_i(acc4, vd[64,16], vs[64,16], vt[64,16]);
-    vmudn_i(acc5, vd[80,16], vs[80,16], vt[80,16]);
-    vmudn_i(acc6, vd[96,16], vs[96,16], vt[96,16]);
-    vmudn_i(acc7, vd[112,16], vs[112,16], vt[112,16]);
+    vd = vmudn(vs, vt, e:4);
 }
 
-:vmadn is prime=0x12 & fct=0b001110 unimpl
-macro vmuldh_i(acc, d, s, t) {
-    local tmp:4 = (sext(s) * sext(t));
-    acc[0,32] = tmp << 16;
-    clamp_signed(d, acc[16,16]);
+define pcodeop vmadn;
+:vmadn vd, vs, vt[e] is prime=0x12 & fct=0b001110 & vd & vs & vt & e {
+    vd = vmadn(vs, vt, e:1);
 }
+define pcodeop vmuldh;
 :vmudh vd, vs, vt[e] is prime=0x12 & bit25=1 & fct=0b000111 & vd & vs & vt & e {
-    vmuldh_i(acc0, vd[0,16], vs[0,16], vt[0,16]);
-    vmuldh_i(acc1, vd[16,16], vs[16,16], vt[16,16]);
-    vmuldh_i(acc2, vd[32,16], vs[32,16], vt[32,16]);
-    vmuldh_i(acc3, vd[48,16], vs[48,16], vt[48,16]);
-    vmuldh_i(acc4, vd[64,16], vs[64,16], vt[64,16]);
-    vmuldh_i(acc5, vd[80,16], vs[80,16], vt[80,16]);
-    vmuldh_i(acc6, vd[96,16], vs[96,16], vt[96,16]);
-    vmuldh_i(acc7, vd[112,16], vs[112,16], vt[112,16]);
+    vt = vmuldh(vs, vt, e:4);
 }
-:vmadh is prime=0x12 & fct=0b001111 unimpl
+define pcodeop vmadh;
+:vmadh vd, vs, vt[e] is prime=0x12 & fct=0b001111 & vd & vs & vt & e {
+    vd = vmadh(vs, vt, e:1);
+}
 
 # Add
 
-macro vadd_i(i, vd, vs, vt, e) {
-    local j:1;
-    get_j_from_i(j, i, e);
-
-    local d_addr:4 = &vd + zext(i) * 2;
-    local s_addr:4 = &vs + zext(i) * 2;
-    local t_addr:4 = &vt + zext(j) * 2;
-    local a_addr:4 = &acc0 + zext(i) * 6;
-
-    # todo: + VC0
-    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr) + zext((VCO >> i) & 1);
-    *[register]:2 a_addr = res[0,16];
-    clamp_signed(*[register]:2 d_addr, res[0,16]);
-
-    i = i + 1;
-}
+define pcodeop vadd;
 :vadd vd, vs, vt[e] is prime=0x12 & fct=0b010000 & vd & vs & vt & e {
-    local i:1 = 0;
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    vadd_i(i, vd, vs, vt, e:1);
-    VCO = 0;
+    vd = vadd(vs, vt, e:4);
 }
-:vsub is prime=0x12 & fct=0b010001 unimpl
-:vabs is prime=0x12 & fct=0b010011 unimpl
-
-macro vaddc_i(i, vd, vs, vt, e) {
-    local j:1;
-    get_j_from_i(j, i, e);
-
-    local d_addr:4 = &vd + zext(i) * 2;
-    local s_addr:4 = &vs + zext(i) * 2;
-    local t_addr:4 = &vt + zext(j) * 2;
-    local a_addr:4 = &acc0 + zext(i) * 6;
-
-    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr);
-    *[register]:2 a_addr = res[0,16];
-    *[register]:2 d_addr = res[0,16];
-    vco_set_carry(i, res[16,1]);
-    vco_set_notequ(i, 0:1);
-
-    i = i + 1;
+define pcodeop vsub;
+:vsub vd, vs, vt[e] is prime=0x12 & fct=0b010001 & vd & vs & vt & e {
+    vd = vsub(vs, vt, e:4);
+}
+define pcodeop vabs;
+:vabs vd, vs, vt[e] is prime=0x12 & fct=0b010011 & vd & vs & vt & e {
+    vd = vabs(vs, vt, e:4);
 }
 
+define pcodeop vaddc;
 :vaddc vd, vs, vt[e] is prime=0x12 & fct=0b010100 & vd & vs & vt & e {
-    local i:1 = 0;
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
-    vaddc_i(i, vd, vs, vt, e:1);
+    vd = vaddc(vs, vt, e:4);
 }
-:vsubc is prime=0x12 & fct=0b010101 unimpl
-:vsar is prime=0x12 & fct=0b011101 unimpl
+define pcodeop vsubc;
+:vsubc vd, vs, vt[e] is prime=0x12 & fct=0b010101 & vd & vs & vt & e {
+    vd = vsubc(vs, vt, e:4);
+}
+define pcodeop vsar;
+:vsar vd, vs, vt[e] is prime=0x12 & fct=0b011101 & vd & vs & vt & e {
+    vd = vsar(vs, vt, e:4);
+}
 
 
 # Select
-:vlt is prime=0x12 & fct=0b100000 unimpl
-:veq is prime=0x12 & fct=0b100001 unimpl
-:vne is prime=0x12 & fct=0b100010 unimpl
-:vge is prime=0x12 & fct=0b100011 unimpl
-:vcl is prime=0x12 & fct=0b100100 unimpl
-:vch is prime=0x12 & fct=0b100101 unimpl
-:vcr is prime=0x12 & fct=0b100110 unimpl
-:vmrg is prime=0x12 & fct=0b100111 unimpl
+define pcodeop vlt;
+:vlt vd, vs, vt[e] is prime=0x12 & fct=0b100000 & vd & vs & vt & e {
+    vd = vlt(vs, vt, e:4);
+}
+define pcodeop veq;
+:veq vd, vs, vt[e] is prime=0x12 & fct=0b100001 & vd & vs & vt & e {
+    vd = veq(vs, vt, e:4);
+}
+define pcodeop vne;
+:vne vd, vs, vt[e] is prime=0x12 & fct=0b100010 & vd & vs & vt & e {
+    vd = vne(vs, vt, e:4);
+}
+define pcodeop vge;
+:vge vd, vs, vt[e] is prime=0x12 & fct=0b100011 & vd & vs & vt & e {
+    vd = vge(vs, vt, e:4);
+}
+define pcodeop vcl;
+:vcl vd, vs, vt[e] is prime=0x12 & fct=0b100100 & vd & vs & vt & e {
+    vd = vcl(vs, vt, e:4);
+}
+define pcodeop vch;
+:vch vd, vs, vt[e] is prime=0x12 & fct=0b100101 & vd & vs & vt & e {
+    vd = vch(vs, vt, e:4);
+}
+define pcodeop vcr;
+:vcr vd, vs, vt[e] is prime=0x12 & fct=0b100110 & vd & vs & vt & e {
+    vd = vcr(vs, vt, e:4);
+}
+define pcodeop vmrg;
+:vmrg vd, vs, vt[e] is prime=0x12 & fct=0b100111 & vd & vs & vt & e {
+    vd = vmrg(vs, vt, e:4);
+}
 
 
 # Logical
-:vand vd, vs, vt[e] is prime=0x12 & fct=0b101000 & vd & vs & vt & e unimpl
-:vnand vd, vs, vt[e] is prime=0x12 & fct=0b101001 & vd & vs & vt & e unimpl
-:vor vd, vs, vt[e] is prime=0x12 & fct=0b101010 & vd & vs & vt & e unimpl
-:vnor vd, vs, vt[e] is prime=0x12 & fct=0b101011 & vd & vs & vt & e unimpl
-
-macro vxor_i(i, vd, vs, vt, e) {
-    local j:1;
-    get_j_from_i(j, i, e);
-
-    local d_addr:4 = &vd + zext(i) * 2;
-    local s_addr:4 = &vs + zext(i) * 2;
-    local t_addr:4 = &vt + zext(j) * 2;
-    local a_addr:4 = &acc0 + zext(i) * 6;
-
-    local res:4 = zext(*[register]:2 s_addr) + zext(*[register]:2 t_addr);
-    *[register]:2 a_addr = res[0,16];
-    *[register]:2 d_addr = res[0,16];
-    vco_set_carry(i, res[16,1]);
-    vco_set_notequ(i, 0:1);
-
-    i = i + 1;
+define pcodeop vand;
+:vand vd, vs, vt[e] is prime=0x12 & fct=0b101000 & vd & vs & vt & e {
+    vd = vand(vs, vt, e:4);
 }
+define pcodeop vnand;
+:vnand vd, vs, vt[e] is prime=0x12 & fct=0b101001 & vd & vs & vt & e {
+    vd = vnand(vs, vt, e:4);
+}
+define pcodeop vor;
+:vor vd, vs, vt[e] is prime=0x12 & fct=0b101010 & vd & vs & vt & e {
+    vd = vor(vs, vt, e:4);
+}
+define pcodeop vnor;
+:vnor vd, vs, vt[e] is prime=0x12 & fct=0b101011 & vd & vs & vt & e {
+    vd = vnor(vs, vt, e:4);
+}
+
+define pcodeop vxor;
 :vxor vd, vs, vt[e] is prime=0x12 & fct=0b101100 & vd & vs & vt & e {
-    local i:1 = 0;
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
-    vxor_i(i, vd, vs, vt, e:1);
+    vt = vxor(vs, vt, e:4);
 }
-:vvxor vd, vs, vt[e] is prime=0x12 & fct=0b101101 & vd & vs & vt & e unimpl
+define pcodeop vvxor;
+:vvxor vd, vs, vt[e] is prime=0x12 & fct=0b101101 & vd & vs & vt & e {
+    vd = vvxor(vs, vt, e:4);
+}
 
 
 # Divide
-:vrcp is prime=0x12 & fct=0b110000 unimpl
-:vrcpl is prime=0x12 & fct=0b110001 unimpl
-:vrcph is prime=0x12 & fct=0b110010 unimpl
-:vmov is prime=0x12 & fct=0b110011 unimpl
-:vrsq is prime=0x12 & fct=0b110100 unimpl
-:vrsql is prime=0x12 & fct=0b110101 unimpl
-:vrsqh is prime=0x12 & fct=0b110110 unimpl
-:vnop is prime=0x12 & fct=0b110111 unimpl
+define pcodeop vrcp;
+:vrcp vd, vs, vt[e] is prime=0x12 & fct=0b110000 & vd & vs & vt & e {
+    vd = vrcp(vs, vt, e:4);
+}
+define pcodeop vrcpl;
+:vrcpl vd, vs, vt[e] is prime=0x12 & fct=0b110001 & vd & vs & vt & e {
+    vd = vrcpl(vs, vt, e:4);
+}
+define pcodeop vrcph;
+:vrcph vd, vs, vt[e] is prime=0x12 & fct=0b110010 & vd & vs & vt & e {
+    vd = vrcph(vs, vt, e:4);
+}
+define pcodeop vmov;
+:vmov vd, vs, vt[e] is prime=0x12 & fct=0b110011 & vd & vs & vt & e {
+    vd = vmov(vs, vt, e:4);
+}
+define pcodeop vrsq;
+:vrsq vd, vs, vt[e] is prime=0x12 & fct=0b110100 & vd & vs & vt & e {
+    vd = vrsq(vs, vt, e:4);
+}
+define pcodeop vrsql;
+:vrsql vd, vs, vt[e] is prime=0x12 & fct=0b110101 & vd & vs & vt & e {
+    vd = vrsql(vs, vt, e:4);
+}
+define pcodeop vrsqh;
+:vrsqh vd, vs, vt[e] is prime=0x12 & fct=0b110110 & vd & vs & vt & e {
+    vd = vrsqh(vs, vt, e:4);
+}
+:vnop is prime=0x12 & fct=0b110111 {
+
+}
 
 
 # LWC2 / SWC2
 
-:lbv vt[element], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element & OFF06_BASE {
-    addr:4 = &vt + element;
-    *[register]:1 addr = *[ram] OFF06_BASE;
+:lbv vt[0x0], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x0 & OFF06_BASE {
+    vt[0,8] = *OFF06_BASE;
 }
-:sbv vt[element], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element & OFF06_BASE {
-    addr:4 = &vt + element;
-    *[ram]:1 OFF06_BASE = *[register] addr;
+:lbv vt[0x1], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x1 & OFF06_BASE {
+    vt[8,8] = *OFF06_BASE;
+}
+:lbv vt[0x2], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x2 & OFF06_BASE {
+    vt[16,8] = *OFF06_BASE;
+}
+:lbv vt[0x3], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x3 & OFF06_BASE {
+    vt[24,8] = *OFF06_BASE;
+}
+:lbv vt[0x4], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x4 & OFF06_BASE {
+    vt[32,8] = *OFF06_BASE;
+}
+:lbv vt[0x5], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x5 & OFF06_BASE {
+    vt[40,8] = *OFF06_BASE;
+}
+:lbv vt[0x6], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x6 & OFF06_BASE {
+    vt[48,8] = *OFF06_BASE;
+}
+:lbv vt[0x7], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x7 & OFF06_BASE {
+    vt[56,8] = *OFF06_BASE;
+}
+:lbv vt[0x8], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x8 & OFF06_BASE {
+    vt[64,8] = *OFF06_BASE;
+}
+:lbv vt[0x9], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0x9 & OFF06_BASE {
+    vt[72,8] = *OFF06_BASE;
+}
+:lbv vt[0xA], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xA & OFF06_BASE {
+    vt[80,8] = *OFF06_BASE;
+}
+:lbv vt[0xB], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xB & OFF06_BASE {
+    vt[88,8] = *OFF06_BASE;
+}
+:lbv vt[0xC], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xC & OFF06_BASE {
+    vt[96,8] = *OFF06_BASE;
+}
+:lbv vt[0xD], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xD & OFF06_BASE {
+    vt[104,8] = *OFF06_BASE;
+}
+:lbv vt[0xE], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xE & OFF06_BASE {
+    vt[112,8] = *OFF06_BASE;
+}
+:lbv vt[0xF], OFF06_BASE is prime=0b110010 & cop2lsop=0b00000 & vt & element=0xF & OFF06_BASE {
+    vt[120,8] = *OFF06_BASE;
 }
 
-:lsv vt[element], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element & OFF06L1_BASE {
-    addr:4 = &vt + element;
-    *[register]:2 addr = *[ram] OFF06L1_BASE;
+:sbv vt[0x0], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x0 & OFF06_BASE {
+    *OFF06_BASE = vt[0,8];
 }
-:ssv vt[element], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element & OFF06L1_BASE {
-    addr:4 = &vt + element;
-    *[ram]:2 OFF06L1_BASE = *[register] addr;
+:sbv vt[0x1], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x1 & OFF06_BASE {
+    *OFF06_BASE = vt[8,8];
+}
+:sbv vt[0x2], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x2 & OFF06_BASE {
+    *OFF06_BASE = vt[16,8];
+}
+:sbv vt[0x3], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x3 & OFF06_BASE {
+    *OFF06_BASE = vt[24,8];
+}
+:sbv vt[0x4], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x4 & OFF06_BASE {
+    *OFF06_BASE = vt[32,8];
+}
+:sbv vt[0x5], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x5 & OFF06_BASE {
+    *OFF06_BASE = vt[40,8];
+}
+:sbv vt[0x6], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x6 & OFF06_BASE {
+    *OFF06_BASE = vt[48,8];
+}
+:sbv vt[0x7], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x7 & OFF06_BASE {
+    *OFF06_BASE = vt[56,8];
+}
+:sbv vt[0x8], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x8 & OFF06_BASE {
+    *OFF06_BASE = vt[64,8];
+}
+:sbv vt[0x9], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0x9 & OFF06_BASE {
+    *OFF06_BASE = vt[72,8];
+}
+:sbv vt[0xA], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xA & OFF06_BASE {
+    *OFF06_BASE = vt[80,8];
+}
+:sbv vt[0xB], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xB & OFF06_BASE {
+    *OFF06_BASE = vt[88,8];
+}
+:sbv vt[0xC], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xC & OFF06_BASE {
+    *OFF06_BASE = vt[96,8];
+}
+:sbv vt[0xD], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xD & OFF06_BASE {
+    *OFF06_BASE = vt[104,8];
+}
+:sbv vt[0xE], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xE & OFF06_BASE {
+    *OFF06_BASE = vt[112,8];
+}
+:sbv vt[0xF], OFF06_BASE is prime=0b111010 & cop2lsop=0b00000 & vt & element=0xF & OFF06_BASE {
+    *OFF06_BASE = vt[120,8];
 }
 
-:llv vt[element], OFF06L2_BASE is prime=0b110010 & cop2lsop=0b00010 & vt & element & OFF06L2_BASE {
-    addr:4 = &vt + element;
-    *[register]:4 addr = *[ram] OFF06L2_BASE;
+:lsv vt[0x0], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0x0 & OFF06L1_BASE {
+    vt[0,16] = *OFF06L1_BASE;
 }
-:slv vt[element], OFF06L2_BASE is prime=0b111010 & cop2lsop=0b00010 & vt & element & OFF06L2_BASE {
-    addr:4 = &vt + element;
-    *[ram]:4 OFF06L2_BASE = *[register] addr;
+:lsv vt[0x2], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0x2 & OFF06L1_BASE {
+    vt[16,16] = *OFF06L1_BASE;
+}
+:lsv vt[0x4], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0x4 & OFF06L1_BASE {
+    vt[32,16] = *OFF06L1_BASE;
+}
+:lsv vt[0x6], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0x6 & OFF06L1_BASE {
+    vt[48,16] = *OFF06L1_BASE;
+}
+:lsv vt[0x8], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0x8 & OFF06L1_BASE {
+    vt[64,16] = *OFF06L1_BASE;
+}
+:lsv vt[0xA], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0xA & OFF06L1_BASE {
+    vt[80,16] = *OFF06L1_BASE;
+}
+:lsv vt[0xC], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0xC & OFF06L1_BASE {
+    vt[96,16] = *OFF06L1_BASE;
+}
+:lsv vt[0xE], OFF06L1_BASE is prime=0b110010 & cop2lsop=0b00001 & vt & element=0xE & OFF06L1_BASE {
+    vt[112,16] = *OFF06L1_BASE;
+}
+:ssv vt[0x0], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0x0 & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[0,16];
+}
+:ssv vt[0x2], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0x2 & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[16,16];
+}
+:ssv vt[0x4], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0x4 & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[32,16];
+}
+:ssv vt[0x6], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0x6 & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[48,16];
+}
+:ssv vt[0x8], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0x8 & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[64,16];
+}
+:ssv vt[0xA], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0xA & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[80,16];
+}
+:ssv vt[0xC], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0xC & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[96,16];
+}
+:ssv vt[0xE], OFF06L1_BASE is prime=0b111010 & cop2lsop=0b00001 & vt & element=0xE & OFF06L1_BASE {
+    *OFF06L1_BASE = vt[112,16];
 }
 
-:ldv vt[element], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00011 & vt & element & OFF06L3_BASE {
-    addr:4 = &vt + element;
-    *[register]:8 addr = *[ram] OFF06L3_BASE;
+:llv vt[0x0], OFF06L2_BASE is prime=0b110010 & cop2lsop=0b00010 & vt & element=0 & OFF06L2_BASE {
+    vt[0,32] = *OFF06L2_BASE;
 }
-:sdv vt[element], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00011 & vt & element & OFF06L3_BASE {
-    addr:4 = &vt + element;
-    *[ram]:8 OFF06L3_BASE = *[register] addr;
+:llv vt[0x4], OFF06L2_BASE is prime=0b110010 & cop2lsop=0b00010 & vt & element=0x4 & OFF06L2_BASE {
+    vt[32,32] = *OFF06L2_BASE;
+}
+:llv vt[0x8], OFF06L2_BASE is prime=0b110010 & cop2lsop=0b00010 & vt & element=0x8 & OFF06L2_BASE {
+    vt[64,32] = *OFF06L2_BASE;
+}
+:llv vt[0xC], OFF06L2_BASE is prime=0b110010 & cop2lsop=0b00010 & vt & element=0xc & OFF06L2_BASE {
+    vt[96,32] = *OFF06L2_BASE;
+}
+:slv vt[0x0], OFF06L2_BASE is prime=0b111010 & cop2lsop=0b00010 & vt & element=0 & OFF06L2_BASE {
+    *OFF06L2_BASE = vt[0,32];
+}
+:slv vt[0x4], OFF06L2_BASE is prime=0b111010 & cop2lsop=0b00010 & vt & element=0x4 & OFF06L2_BASE {
+    *OFF06L2_BASE = vt[32,32];
+}
+:slv vt[0x8], OFF06L2_BASE is prime=0b111010 & cop2lsop=0b00010 & vt & element=0x8 & OFF06L2_BASE {
+    *OFF06L2_BASE = vt[64,32];
+}
+:slv vt[0xC], OFF06L2_BASE is prime=0b111010 & cop2lsop=0b00010 & vt & element=0xc & OFF06L2_BASE {
+    *OFF06L2_BASE = vt[96,32];
 }
 
-:lqv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00100 & vt & element & OFF06L4_BASE {
-    addr:4 = &vt + element;
-    *[register]:16 addr = *[ram] OFF06L4_BASE;
+:ldv vt[0x0], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00011 & vt & element=0 & OFF06L3_BASE {
+    vt[0,64] = *OFF06L3_BASE;
 }
-:sqv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00100 & vt & element & OFF06L4_BASE {
-    addr:4 = &vt + element;
-    *[ram]:16 OFF06L4_BASE = *[register] addr;
+:ldv vt[0x8], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00011 & vt & element=8 & OFF06L3_BASE {
+    vt[64,64] = *OFF06L3_BASE;
+}
+:sdv vt[0x0], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00011 & vt & element=0 & OFF06L3_BASE {
+    *OFF06L3_BASE = vt[0,64];
+}
+:sdv vt[0x8], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00011 & vt & element=8 & OFF06L3_BASE {
+    *OFF06L3_BASE = vt[64,64];
+}
+
+:lqv vt[0x0], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00100 & vt & element=0 & OFF06L4_BASE {
+    vt = *OFF06L4_BASE;
+}
+:sqv vt[0x0], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00100 & vt & element=0 & OFF06L4_BASE {
+    *OFF06L4_BASE = vt;
 }
 
 
@@ -286,7 +407,27 @@ macro vxor_i(i, vd, vs, vt, e) {
 :ltv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
 :stv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
 
-:mtc2 rt, vs[element] is prime=0x12 & copop=4 & rt & vs & element {
-    local addr:4 = &vs + element;
-    *[register]:2 addr = rt;
+:mtc2 rt, vs[0x0] is prime=0x12 & copop=4 & rt & vs & element=0x0 {
+    vs[0,16] = rt[0,16];
+}
+:mtc2 rt, vs[0x2] is prime=0x12 & copop=4 & rt & vs & element=0x2 {
+    vs[16,16] = rt[0,16];
+}
+:mtc2 rt, vs[0x4] is prime=0x12 & copop=4 & rt & vs & element=0x4 {
+    vs[32,16] = rt[0,16];
+}
+:mtc2 rt, vs[0x6] is prime=0x12 & copop=4 & rt & vs & element=0x6 {
+    vs[48,16] = rt[0,16];
+}
+:mtc2 rt, vs[0x8] is prime=0x12 & copop=4 & rt & vs & element=0x8 {
+    vs[64,16] = rt[0,16];
+}
+:mtc2 rt, vs[0xA] is prime=0x12 & copop=4 & rt & vs & element=0xA {
+    vs[80,16] = rt[0,16];
+}
+:mtc2 rt, vs[0xC] is prime=0x12 & copop=4 & rt & vs & element=0xC {
+    vs[96,16] = rt[0,16];
+}
+:mtc2 rt, vs[0xE] is prime=0x12 & copop=4 & rt & vs & element=0xE {
+    vs[112,16] = rt[0,16];
 }
