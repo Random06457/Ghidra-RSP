@@ -4,3 +4,4 @@
 .project
 *.sla
 data/languages/*.sla
+/.settings
