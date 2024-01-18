@@ -20,7 +20,6 @@ import java.util.*;
 import java.io.FileInputStream;
 import java.io.File;
 
-import docking.widgets.OptionDialog;
 import docking.widgets.filechooser.GhidraFileChooser;
 import ghidra.app.util.Option;
 import ghidra.app.util.OptionUtils;
