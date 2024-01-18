@@ -95,7 +95,9 @@ public class GhidraRSPLoader extends AbstractProgramWrapperLoader {
 
         byte[] imem = provider.readBytes(0, provider.length());
         try {
-            api.createMemoryBlock("imem", api.toAddr(isBoot ? 0x1000 : 0x1080), imem, false).setPermissions(true, false, true);
+            int textBase = isBoot ? 0x1000 : 0x1080;
+            api.createMemoryBlock("imem", api.toAddr(textBase), imem, false).setPermissions(true, false, true);
+            api.addEntryPoint(api.toAddr(textBase));
             program.getMemory().createUninitializedBlock("dmem.uninit", api.toAddr(dmemEnd), 0x1000 - dmemEnd, false).setPermissions(true, true, false);
         } catch (Exception e) {
             e.printStackTrace();
