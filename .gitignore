@@ -5,3 +5,5 @@
 *.sla
 data/languages/*.sla
 /.settings
+/dist
+/.gradle
