@@ -1,4 +1,4 @@
-# Coprocessor Computational insturction
+# Coprocessor Computational instruction
 
 # Multiply
 
@@ -381,31 +381,68 @@ define pcodeop vrsqh;
     *OFF06L3_BASE = vt[64,64];
 }
 
+define pcodeop lqv;
 :lqv vt[0x0], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00100 & vt & element=0 & OFF06L4_BASE {
-    vt = *OFF06L4_BASE;
+    vt = lqv(OFF06L4_BASE);
 }
+define pcodeop sqv;
 :sqv vt[0x0], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00100 & vt & element=0 & OFF06L4_BASE {
-    *OFF06L4_BASE = vt;
+    sqv(vt, OFF06L4_BASE);
 }
 
+define pcodeop lrv;
+:lrv vt[0x0], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00101 & vt & element=0x0 & OFF06L4_BASE {
+    vt = lrv(OFF06L4_BASE);
+}
+define pcodeop srv;
+:srv vt[0x0], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00101 & vt & element=0x0 & OFF06L4_BASE {
+    srv(vt, OFF06L4_BASE);
+}
 
-:lrv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b00101 & vt & element & OFF06L4_BASE unimpl
-:srv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b00101 & vt & element & OFF06L4_BASE unimpl
+define pcodeop lpv;
+:lpv vt[element], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00110 & vt & element & OFF06L3_BASE {
+    vt = lpv(element:1, OFF06L3_BASE);
+}
+define pcodeop spv;
+:spv vt[element], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00110 & vt & element & OFF06L3_BASE {
+    spv(vt, element:1, OFF06L3_BASE);
+}
 
-:lpv vt[element], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00110 & vt & element & OFF06L3_BASE unimpl
-:spv vt[element], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00110 & vt & element & OFF06L3_BASE unimpl
+define pcodeop luv;
+:luv vt[element], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00111 & vt & element & OFF06L3_BASE {
+    vt = luv(element:1, OFF06L3_BASE);
+}
+define pcodeop suv;
+:suv vt[element], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00111 & vt & element & OFF06L3_BASE {
+    suv(vt, element:1, OFF06L3_BASE);
+}
 
-:luv vt[element], OFF06L3_BASE is prime=0b110010 & cop2lsop=0b00111 & vt & element & OFF06L3_BASE unimpl
-:suv vt[element], OFF06L3_BASE is prime=0b111010 & cop2lsop=0b00111 & vt & element & OFF06L3_BASE unimpl
+define pcodeop lhv;
+:lhv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01000 & vt & element & OFF06L4_BASE  {
+    vt = lhv(element:1, OFF06L4_BASE);
+}
+define pcodeop shv;
+:shv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01000 & vt & element & OFF06L4_BASE  {
+    shv(vt, element:1, OFF06L4_BASE);
+}
 
-:lhv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01000 & vt & element & OFF06L4_BASE  unimpl
-:shv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01000 & vt & element & OFF06L4_BASE  unimpl
+define pcodeop lfv;
+:lfv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01001 & vt & element & OFF06L4_BASE  {
+    vt = lfv(element:1, OFF06L4_BASE);
+}
+define pcodeop sfv;
+:sfv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01001 & vt & element & OFF06L4_BASE  {
+    sfv(vt, element:1, OFF06L4_BASE);
+}
 
-:lfv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01001 & vt & element & OFF06L4_BASE  unimpl
-:sfv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01001 & vt & element & OFF06L4_BASE  unimpl
-
-:ltv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
-:stv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  unimpl
+define pcodeop ltv;
+:ltv vt[element], OFF06L4_BASE is prime=0b110010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  {
+    vt = ltv(element:1, OFF06L4_BASE);
+}
+define pcodeop stv;
+:stv vt[element], OFF06L4_BASE is prime=0b111010 & cop2lsop=0b01011 & vt & element & OFF06L4_BASE  {
+    stv(vt, element:1, OFF06L4_BASE);
+}
 
 :mtc2 rt, vs[0x0] is prime=0x12 & copop=4 & rt & vs & element=0x0 {
     vs[0,16] = rt[0,16];
