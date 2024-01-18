@@ -858,7 +858,7 @@ SAV: val							is sa2 [ val = sa2+1; ] { export *[const]:1 val; }
 Rel16: reloc		is off16	[ reloc=inst_start+4+4*off16; ]					{ export *:$(ADDRSIZE) reloc; }
 Rel21: reloc		is off21	[ reloc=inst_start+4+4*off21; ]					{ export *:$(ADDRSIZE) reloc; }
 Rel26: reloc		is off26	[ reloc=inst_start+4+4*off26; ]					{ export *:$(ADDRSIZE) reloc; }
-Abs26: reloc		is ind26	[ reloc=((inst_start+4) $and 0xfffffffff0000000) | 4*ind26; ]	{ export *:$(ADDRSIZE) reloc; }
+Abs26: reloc		is ind26	[ reloc=(((inst_start+4) $and 0xfffffffff0000000) | 4*ind26) & 0xFFFF; ]	{ export *:$(ADDRSIZE) reloc; }
 
 InsSize: mysize           is msbd & lsb   [ mysize = msbd - lsb + 1; ]      { tmp:1 = mysize; export tmp; }
 ExtSize: mysize           is msbd         [ mysize = msbd + 1; ]            { tmp:1 = mysize; export tmp; }
@@ -868,9 +868,9 @@ macro JXWritePC(addr) {
    ISAModeSwitch = (addr & 0x1) != 0;
    tmp:$(REGSIZE) = -2;
    tmp = tmp & addr;
-   pc = tmp;
+   pc = tmp & 0xFFFF;
 @else
-   pc=addr;
+   pc=addr & 0xFFFF;
 @endif
 }
 
